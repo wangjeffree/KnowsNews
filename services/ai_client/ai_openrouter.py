@@ -1,6 +1,6 @@
 import requests
-from services.ai_base import AIServiceBase
-from services.config import OPENROUTER_HTTP_REFERER
+from .ai_base import AIServiceBase
+from ..config import OPENROUTER_HTTP_REFERER
 
 class OpenRouterService(AIServiceBase):
     def __init__(self, api_key: str):
@@ -8,7 +8,16 @@ class OpenRouterService(AIServiceBase):
         self.api_base = "https://openrouter.ai/api/v1"
         
     def _call_api(self, prompt: str) -> str:
+        import time
         try:
+            start_time = time.time()
+            # 添加断点：输出API调用信息与模型参数
+            model_info = "deepseek/deepseek-r1"
+            # model_info = "deepseek/deepseek-chat"
+            # model_info = "deepseek/deepseek-r1-distill-llama-70b:free"
+            # model_info = "deepseek/deepseek-r1:free"
+            print(f"\n--- AI Call开始。调用地址：{self.api_base}/chat/completions，模型：{model_info}")
+            
             response = requests.post(
                 f"{self.api_base}/chat/completions",
                 headers={
@@ -17,14 +26,15 @@ class OpenRouterService(AIServiceBase):
                     "Content-Type": "application/json"
                 },
                 json={
-                    # "model": "deepseek/deepseek-r1", 
-                    # "model": "deepseek/deepseek-chat",
-                    "model": "deepseek/deepseek-r1-distill-llama-70b:free",
+                    "model": model_info,
                     "messages": [{"role": "user", "content": prompt}],
-                    "temperature": 0.7
+                    "temperature": 1.0
                 }
             )
             response.raise_for_status()  # 检查HTTP错误
+            elapsed_time = time.time() - start_time
+            print(f"\n--- AI Call完成，耗时：{elapsed_time:.2f}秒")
+            
             result = response.json()
             if "choices" not in result or len(result["choices"]) == 0:
                 raise ValueError("API返回结果格式错误")
@@ -79,24 +89,27 @@ class OpenRouterService(AIServiceBase):
 
 请提供两个部分：
 1. 视频分镜脚本：包含画面设计、镜头调度、转场特效等
-2. 音频设计方案：包含背景音乐风格、音效设计、氛围营造等
+2. AI视频prompt：包含视频风格、场景、镜头、特效等
 
 输出格式：
 视频脚本：
 [分镜脚本内容]
 
-音频建议：
-[音频方案内容]"""
+AI视频prompt：
+[AI视频prompt内容]"""
         
         result = self._call_api(prompt)
-        video_script, audio_script = result.split("音频建议：")
-        return video_script.replace("视频脚本：", "").strip(), audio_script.strip()
+        video_script, ai_video_prompt = result.split("AI视频prompt：")
+        return video_script.replace("视频脚本：", "").strip(), ai_video_prompt.strip()
         
-    def generate_ad_copy(self, book_info: str, target_audience: str) -> str:
+    def generate_ad_copy(self, news_content: str, book_info: str, target_audience: str) -> str:
         prompt = f"""作为专业的文案策划，请为图书创作带货文案：
 
 图书信息：
 {book_info}
+
+新闻内容：
+{news_content}
 
 目标受众：
 {target_audience}
@@ -108,4 +121,22 @@ class OpenRouterService(AIServiceBase):
 4. 结尾要有强有力的行动召唤
 5. 总字数控制在150字以内"""
         
-        return self._call_api(prompt) 
+        return self._call_api(prompt)
+    
+    def generate_video_copy(self, video_content: str, target_audience="对短视频感兴趣的年轻男生") -> str:
+        prompt = f"""作为专业的视频文案创作人员，请为以下生成的短视频生成一份配套的文案说明：
+
+短视频内容：
+{video_content}
+
+目标受众：
+{target_audience}
+
+文案要求：
+1. 语言简洁生动，适合短视频平台传播；
+2. 突出视频主题和亮点，吸引观众点击观看；
+3. 总字数控制在100字以内。
+4. 带有#话题#标签，其中有“#AI视频”就可以
+
+文案说明："""
+        return self._call_api(prompt)

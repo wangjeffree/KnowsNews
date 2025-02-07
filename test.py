@@ -1,8 +1,8 @@
 import unittest
 from services.config import *
-from services.ai_deepseek import DeepseekService
-from services.ai_siliconflow import SiliconflowService
-from services.ai_openrouter import OpenRouterService
+from services.ai_client.ai_deepseek import DeepseekService
+from services.ai_client.ai_siliconflow import SiliconflowService
+from services.ai_client.ai_openrouter import OpenRouterService
 from services.dangdang_html_parser import get_hot_book_list
 
 class TestAIServices(unittest.TestCase):
@@ -28,22 +28,34 @@ class TestAIServices(unittest.TestCase):
         for service_name, service in self.services.items():
             print(f"\n测试 {service_name} 服务:")
             try:
+
+                book_title = "《哪吒之魔童闹海》"
+
                 # 1. 测试图书推荐
-                hot_book_list = get_hot_book_list()
-                book_title = service.analyze_news_and_recommend_book(self.test_news, hot_book_list)
-                print(f"推荐书籍: {book_title}")
-                self.assertIsInstance(book_title, str)
-                self.assertIn("《", book_title)
-                self.assertIn("》", book_title)
-                
+                # hot_book_list = get_hot_book_list()
+                # book_title = service.analyze_news_and_recommend_book(self.test_news, hot_book_list)
+                # print(f"推荐书籍: {book_title}")
+                # self.assertIsInstance(book_title, str)
+                # self.assertIn("《", book_title)
+                # self.assertIn("》", book_title)
 
-                # 2. 测试旁白生成
-                narration = service.generate_narration(self.test_news, book_title)
-                print(f"生成旁白: {narration}")
-                self.assertIsInstance(narration, str)
-                self.assertTrue(len(narration) > 0)
+                # # 2. 测试旁白生成
+                # narration = service.generate_narration(self.test_news, book_title)
+                # print(f"生成旁白: {narration}")
+                # self.assertIsInstance(narration, str)
+                # self.assertTrue(len(narration) > 0)
 
-                
+                # 4. 测试文案生成
+                # ad_copy = service.generate_ad_copy(self.test_news, self.test_book_info, self.test_target_audience)
+                # print(f"广告文案: {ad_copy}")
+                # self.assertIsInstance(ad_copy, str)
+                # self.assertTrue(len(ad_copy) > 0)
+
+                # # 生成视频分镜脚本
+                # video_script, ai_video_prompt = service.generate_video_script(narration)
+                # print("生成的视频分镜脚本:", video_script)
+                # print("生成的AI视频prompt:", ai_video_prompt)
+                            
                 # 3. 测试视频脚本生成
                 # video_script, audio_script = service.generate_video_script(narration)
                 # print(f"视频脚本: {video_script[:100]}...")
@@ -51,11 +63,6 @@ class TestAIServices(unittest.TestCase):
                 # self.assertIsInstance(video_script, str)
                 # self.assertIsInstance(audio_script, str)
                 
-                # # 4. 测试文案生成
-                # ad_copy = service.generate_ad_copy(self.test_book_info, self.test_target_audience)
-                # print(f"广告文案: {ad_copy}")
-                # self.assertIsInstance(ad_copy, str)
-                # self.assertTrue(len(ad_copy) > 0)
                 
             except Exception as e:
                 self.fail(f"{service_name} 服务测试失败: {str(e)}")

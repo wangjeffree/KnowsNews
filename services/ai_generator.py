@@ -42,7 +42,7 @@ def generate_ad_copy(narration):
     # 模拟生成带货文案
     # 调用 OpenRouter 服务生成带货文案
     try:
-        from services.ai_openrouter import OpenRouterService
+        from services.ai_client.ai_openrouter import OpenRouterService
         from services.config import OPENROUTER_API_KEY
         
         openrouter = OpenRouterService(OPENROUTER_API_KEY)

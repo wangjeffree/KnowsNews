@@ -20,6 +20,6 @@ class AIServiceBase(ABC):
         pass
     
     @abstractmethod
-    def generate_ad_copy(self, book_info: str, target_audience: str) -> str:
+    def generate_ad_copy(self, news_content: str, book_info: str, target_audience: str) -> str:
         """生成带货文案"""
         pass 

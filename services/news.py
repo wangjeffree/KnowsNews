@@ -3,13 +3,21 @@ from bs4 import BeautifulSoup
 from difflib import SequenceMatcher
 import json
 from services.config import *
-
+import time
 def get_news():
-
 
     # 从聚合数据API获取新闻列表
     juhe_news_list = get_news_from_juhe()
     print("聚合数据新闻列表:", juhe_news_list)
+    # 将聚合数据新闻列表保存为json文件，文件名中包含当前日期
+    date_str = time.strftime("%Y-%m-%d", time.localtime())
+    filename = f"output/news_list_{date_str}.json"
+    try:
+        with open(filename, "w", encoding="utf-8") as f:
+            json.dump(juhe_news_list, f, ensure_ascii=False, indent=4)
+        print(f"聚合新闻已成功保存到文件: {filename}")
+    except Exception as e:
+        print(f"保存聚合新闻到文件失败: {e}")
     
     # 爬取百度热搜新闻
     baidu_news_list = crawl_baidu_hotnews() 
@@ -32,13 +40,13 @@ def get_news():
     print("最相关新闻uniquekey:", most_similar_uniquekey)
     return most_similar_uniquekey
 
-def get_news_detail(news_uniquekey):
+def get_news_content(news_uniquekey):
     # 测试模式：读取测试新闻详情数据
     if DEBUG_MODE:
         try:
             with open(TEST_NEWS_CONTENT_PATH, 'r', encoding='utf-8') as f:
                 content_data = json.load(f)
-                return content_data["result"]["content"]
+                return content_data["result"]["detail"]["title"], content_data["result"]["content"]
         except Exception as e:
             print(f"读取测试新闻详情数据失败: {e}")
             return f"{news_uniquekey} 的详细内容：这是测试环境下的模拟新闻详情。"
@@ -52,17 +60,16 @@ def get_news_detail(news_uniquekey):
             data = response.json()
             if data["error_code"] == 0:
                 # 保存新闻详情到json文件
-                import time
-                timestamp = int(time.time())
-                filename = f"data/news_list_{timestamp}.json"
-                
-                try:
-                    with open(filename, 'w', encoding='utf-8') as f:
-                        json.dump(data, f, ensure_ascii=False, indent=4)
-                    print(f"新闻详情已保存到文件: {filename}")
-                except Exception as e:
-                    print(f"保存新闻详情到文件失败: {e}")
-                return data["result"]["content"]
+                # date = time.strftime("%Y-%m-%d", time.localtime())
+                # filename = f"data/news_content_{date}_{data['result']['title']}.json"
+
+                # try:
+                #     with open(filename, 'w', encoding='utf-8') as f:
+                #         json.dump(data, f, ensure_ascii=False, indent=4)
+                #     print(f"新闻详情已保存到文件: {filename}")
+                # except Exception as e:
+                #     print(f"保存新闻详情到文件失败: {e}")
+                return data["result"]["detail"]["title"], data["result"]["content"]
             
         print(f"获取新闻详情失败: {data}")
         return f"{news_uniquekey} 的详细内容：API调用失败时的默认新闻详情。"
