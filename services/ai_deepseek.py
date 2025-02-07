@@ -6,20 +6,33 @@ class DeepseekService(AIServiceBase):
         super().__init__(api_key)
         self.api_base = "https://api.deepseek.com/v1"
         
+    # 调用DeepSeek大模型API
+    # prompt: 请求参数
+    # model: 模型名称，默认deepseek-chat（即v3），可选deepseek-reasoner（即r1）
     def _call_api(self, prompt: str, model: str = "deepseek-chat") -> str:
-        response = requests.post(
-            f"{self.api_base}/chat/completions",
-            headers={
-                "Authorization": f"Bearer {self.api_key}",
-                "Content-Type": "application/json"
-            },
-            json={
-                "model": model,
-                "messages": [{"role": "user", "content": prompt}]
-            }
-        )
-        return response.json()["choices"][0]["message"]["content"]
-        
+        try:
+            response = requests.post(
+                f"{self.api_base}/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {self.api_key}",
+                    "Content-Type": "application/json"
+                },
+                json={
+                    "model": model,
+                    "messages": [{"role": "user", "content": prompt}],
+                    "temperature": 0.7,
+                    "max_tokens": 2000
+                }
+            )
+            response.raise_for_status()  # 检查HTTP错误
+            result = response.json()
+            if "choices" not in result or len(result["choices"]) == 0:
+                raise ValueError("API返回结果格式错误")
+            return result["choices"][0]["message"]["content"]
+        except requests.exceptions.RequestException as e:
+            raise RuntimeError(f"API请求失败: {str(e)}")
+        except (KeyError, ValueError, TypeError) as e:
+            raise RuntimeError(f"解析API响应失败: {str(e)}")
     def analyze_news_and_recommend_book(self, news_content: str) -> str:
         prompt = f"""分析以下新闻内容，推荐一本最相关的书籍：
         
@@ -30,7 +43,7 @@ class DeepseekService(AIServiceBase):
 2. 优先选择近期出版的畅销书
 3. 只返回书名，格式：《书名》"""
         
-        return self._call_api(prompt)
+        return self._call_api(prompt, "deepseek-reasoner")
         
     def generate_narration(self, news_content: str, book_intro: str) -> str:
         prompt = f"""基于以下新闻内容和推荐书籍，生成视频旁白：

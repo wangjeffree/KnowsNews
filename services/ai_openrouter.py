@@ -8,23 +8,34 @@ class OpenRouterService(AIServiceBase):
         self.api_base = "https://openrouter.ai/api/v1"
         
     def _call_api(self, prompt: str) -> str:
-        response = requests.post(
-            f"{self.api_base}/chat/completions",
-            headers={
-                "Authorization": f"Bearer {self.api_key}",
-                "HTTP-Referer": OPENROUTER_HTTP_REFERER,
-                "Content-Type": "application/json"
-            },
-            json={
-                "model": "deepseek/deepseek-chat-67b",
-                "messages": [{"role": "user", "content": prompt}],
-                "temperature": 0.7
-            }
-        )
-        return response.json()["choices"][0]["message"]["content"]
-        
-    def analyze_news_and_recommend_book(self, news_content: str) -> str:
-        prompt = f"""你是一位专业的图书推荐专家。请分析以下新闻，推荐一本相关度最高的书籍：
+        try:
+            response = requests.post(
+                f"{self.api_base}/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {self.api_key}",
+                    "HTTP-Referer": OPENROUTER_HTTP_REFERER,
+                    "Content-Type": "application/json"
+                },
+                json={
+                    # "model": "deepseek/deepseek-r1", 
+                    # "model": "deepseek/deepseek-chat",
+                    "model": "deepseek/deepseek-r1-distill-llama-70b:free",
+                    "messages": [{"role": "user", "content": prompt}],
+                    "temperature": 0.7
+                }
+            )
+            response.raise_for_status()  # 检查HTTP错误
+            result = response.json()
+            if "choices" not in result or len(result["choices"]) == 0:
+                raise ValueError("API返回结果格式错误")
+            return result["choices"][0]["message"]["content"]
+        except requests.exceptions.RequestException as e:
+            raise RuntimeError(f"API请求失败: {str(e)}")
+        except (KeyError, ValueError, TypeError) as e:
+            raise RuntimeError(f"解析API响应失败: {str(e)}")
+    def analyze_news_and_recommend_book(self, news_content: str, hot_book_list: list) -> str:
+        prompt = f"""你是一位作为专业的小视频带货高手。请分析以下新闻，推荐一本书籍：
+
 
 新闻内容：
 {news_content}
@@ -32,8 +43,11 @@ class OpenRouterService(AIServiceBase):
 基于新闻内容，请推荐一本最合适的书籍：
 1. 与新闻主题高度相关
 2. 内容要有深度，能扩展新闻话题
-3. 优先选择近期出版的优质书籍
-4. 只需返回书名，格式：《书名》"""
+3. 优先选择近期出版的畅销书
+4. 通过带货尽量能够获得佣金
+5. 从这个列表中获取对应图书：
+{hot_book_list}
+6. 只需返回书名，格式：《书名》"""
         
         return self._call_api(prompt)
         
@@ -51,8 +65,10 @@ class OpenRouterService(AIServiceBase):
 2. 巧妙过渡到书籍推荐环节
 3. 重点突出新闻与书籍的关联性
 4. 语言要简洁生动，适合短视频
-5. 总字数控制在300字左右"""
+5. 是旁白解说词,不是展示文本,不需要段落格式,而是需要搭配短视频.流畅的解说词
+6. 总字数控制在300字左右"""
         
+
         return self._call_api(prompt)
         
     def generate_video_script(self, narration: str) -> tuple[str, str]:

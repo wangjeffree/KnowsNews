@@ -33,10 +33,21 @@ def generate_narration(news_detail, book_intro):
 
 
 def generate_video_and_audio():
+    
     # 模拟生成视频和音频
     return "video_generated.mp4", "audio_generated.mp3"
 
 
-def generate_ad_copy():
+def generate_ad_copy(narration):
     # 模拟生成带货文案
+    # 调用 OpenRouter 服务生成带货文案
+    try:
+        from services.ai_openrouter import OpenRouterService
+        from services.config import OPENROUTER_API_KEY
+        
+        openrouter = OpenRouterService(OPENROUTER_API_KEY)
+        ad_copy = openrouter.generate_ad_copy(narration, "对短视频感兴趣的年轻用户")
+        return ad_copy
+    except Exception as e:
+        print(f"生成带货文案失败: {str(e)}")
     return "带货短视频精彩呈现，点击了解更多！" 

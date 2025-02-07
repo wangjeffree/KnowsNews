@@ -7,23 +7,32 @@ class SiliconflowService(AIServiceBase):
         self.api_base = "https://api.siliconflow.com/v1"
         
     def _call_api(self, prompt: str) -> str:
-        response = requests.post(
-            f"{self.api_base}/chat/completions",
-            headers={
-                "Authorization": f"Bearer {self.api_key}",
-                "Content-Type": "application/json"
-            },
-            json={
-                "model": "deepseek-67b",
-                "messages": [{"role": "user", "content": prompt}],
-                "temperature": 0.7,
-                "max_tokens": 2000
-            }
-        )
-        return response.json()["choices"][0]["message"]["content"]
+        try:
+            response = requests.post(
+                f"{self.api_base}/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {self.api_key}",
+                    "Content-Type": "application/json"
+                },
+                json={
+                    "model": "deepseek-ai/DeepSeek-R1", 
+                    "messages": [{"role": "user", "content": prompt}],
+                    "temperature": 0.7,
+                    "max_tokens": 2000
+                }
+            )
+            response.raise_for_status()  # 检查HTTP错误
+            result = response.json()
+            if "choices" not in result or len(result["choices"]) == 0:
+                raise ValueError("API返回结果格式错误")
+            return result["choices"][0]["message"]["content"]
+        except requests.exceptions.RequestException as e:
+            raise RuntimeError(f"API请求失败: {str(e)}")
+        except (KeyError, ValueError, TypeError) as e:
+            raise RuntimeError(f"解析API响应失败: {str(e)}")
         
     def analyze_news_and_recommend_book(self, news_content: str) -> str:
-        prompt = f"""作为AI助手，请分析以下新闻并推荐相关书籍：
+        prompt = f"""作为专业的小视频带货高手，请分析以下新闻并推荐相关书籍：
 
 新闻内容：
 {news_content}

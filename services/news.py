@@ -51,6 +51,17 @@ def get_news_detail(news_uniquekey):
         if response.status_code == 200:
             data = response.json()
             if data["error_code"] == 0:
+                # 保存新闻详情到json文件
+                import time
+                timestamp = int(time.time())
+                filename = f"data/news_list_{timestamp}.json"
+                
+                try:
+                    with open(filename, 'w', encoding='utf-8') as f:
+                        json.dump(data, f, ensure_ascii=False, indent=4)
+                    print(f"新闻详情已保存到文件: {filename}")
+                except Exception as e:
+                    print(f"保存新闻详情到文件失败: {e}")
                 return data["result"]["content"]
             
         print(f"获取新闻详情失败: {data}")
